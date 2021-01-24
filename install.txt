@@ -1,0 +1,4 @@
+Using python 3.8
+pip install pyqt5
+needed to also do:
+sudo apt-get install libxcb-xinerama0
