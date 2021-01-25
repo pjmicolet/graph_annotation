@@ -6,8 +6,10 @@ import yfinance as yf
 import sys
 import os
 import pandas as pd
+from random import randint
+from random import seed
 
-def getData(symbol):
+def getData(symbol:str):
     data = yf.Ticker(symbol)
     hist = data.history(period="max")
     return hist
@@ -17,7 +19,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        self.graphWidget = pg.PlotWidget()
+        self.graphWidget = pg.PlotWidget() 
+        self.graphWidget.setBackground('w')
 
         self.textbox = QLineEdit(self)
         self.textbox.resize(280, 40)
@@ -31,17 +34,27 @@ class MainWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
     
         self.setCentralWidget(widget)
+            
+        seed( 1337 )
 
-    def plotData(self, symbol):
-        stock = getData(symbol)    
-
-        time = pd.to_datetime( stock.index )
+    def plotData(self, symbols:list):
         self.graphWidget.clear()
-        self.graphWidget.plot([ x.timestamp() for x in stock.index ], stock["Close"])
+        for symbol in symbols:
+            dataType = "Close"
+            label = symbol
+            if "@" in symbol:
+                dataType = symbol.split("@")[1]
+                symbol = symbol.split("@")[0]
+            brush = (randint(0,200),randint(0,200),randint(0,200))
+            stock = getData(symbol)    
+            time = pd.to_datetime( stock.index )
+            pen = pg.mkPen(color=brush)
+            self.graphWidget.addLegend()
+            self.graphWidget.plot([ x.timestamp() for x in stock.index ], stock[dataType],pen=pen,name=label)
 
     @QtCore.pyqtSlot()
     def on_pushButtonOk_clicked(self):
-        newStock = self.textbox.text()
+        newStock = self.textbox.text().split(" ")
         self.plotData(newStock)
 
 
@@ -49,7 +62,6 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
 
     main = MainWindow()
-    main.plotData(sys.argv[1])
     main.show()
     
     sys.exit(app.exec_())
